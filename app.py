@@ -2,6 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 import wikipediaapi
 from collections import defaultdict
+import pandas as pd 
+import os
 
 html = requests.get('https://en.wikipedia.org/wiki/Houseplant')
 soup = BeautifulSoup(html.text, 'html.parser')
@@ -32,5 +34,12 @@ for plant in plantquery:
         search(content_array, search_word, plant)
 
 
+df = pd.DataFrame([(k, v[0], v[1], v[2]) for k,v in dict.items()], columns=['plant_name', 'light', 'poison', 'temperature'])
 
-print(dict)
+df = df.replace('\n','', regex=True)
+
+output = 'plants.csv'
+if not os.path.exists('data/'):
+    os.mkdir('data/')
+fullpathname = 'data/' + output
+df.to_csv(fullpathname)
