@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
-# import wikipedia
 import wikipediaapi
+from collections import defaultdict
 
 html = requests.get('https://en.wikipedia.org/wiki/Houseplant')
 soup = BeautifulSoup(html.text, 'html.parser')
@@ -12,20 +12,25 @@ for i in soup.select("li > i"):
     for href in i.find_all("a", href=True):
         plantquery.append(href['href'].split('/')[-1])
 
-light, poison, air, temp = ['']*len(plantquery),['']*len(plantquery),['']*len(plantquery),['']*len(plantquery)
-
-## Bring in wik
-
 wiki = wikipediaapi.Wikipedia(language='en')
 
+dict = defaultdict(list)
+keywords = ['light', 'poison', '°C']
 
-for i in range(len(plantquery)):
-    current_content = wiki.page(plantquery[i]).text
-    content_array = current_content.split('.')
-    scrap_light(content_array, light,i)
-
-def scrap_light(content_array, light,i):
+def search(content_array, search_word, key):
+    match = ''
     for sentence in content_array:
-        if 'light' in sentence:
-            light[i] += sentence
+        if search_word in sentence:
+            match += sentence
             break
+    dict[key].append(match)
+
+for plant in plantquery:
+    current_content = wiki.page(plant).text
+    content_array = current_content.split('.')
+    for search_word in keywords:
+        search(content_array, search_word, plant)
+
+
+
+print(dict)
