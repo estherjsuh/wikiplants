@@ -8,12 +8,14 @@ import os
 html = requests.get('https://en.wikipedia.org/wiki/Houseplant')
 soup = BeautifulSoup(html.text, 'html.parser')
 
+##Get query parameters for the list of houseplants##
 plantquery = []
 
 for i in soup.select("li > i"):
     for href in i.find_all("a", href=True):
         plantquery.append(href['href'].split('/')[-1])
 
+##Add light, poison, and temperature data for each plant into dictionary##
 wiki = wikipediaapi.Wikipedia(language='en')
 
 dict = defaultdict(list)
@@ -33,11 +35,21 @@ for plant in plantquery:
     for search_word in keywords:
         search(content_array, search_word, plant)
 
-
+##Convert dictionary into dataframe##
 df = pd.DataFrame([(k, v[0], v[1], v[2]) for k,v in dict.items()], columns=['plant_name', 'light', 'poison', 'temperature'])
 
-df = df.replace('\n','', regex=True)
+##Cleanse Data##
 
+#1. Remove new lines and white-space
+df = df.replace({r'\s+$': '', r'^\s+': ''}, regex=True).replace(r'\n',  ' ', regex=True)
+
+#2. When 'poison' is not found in the article, replace empty strings with 'not poisonous' 
+df['poison'].replace('', 'not poisonous', inplace=True)
+
+#3. Remove rows with missing data 
+df = df.loc[~((df['light']=='') | (df['temperature']==''))]
+
+##Export cleansed data to csv
 output = 'plants.csv'
 if not os.path.exists('data/'):
     os.mkdir('data/')
